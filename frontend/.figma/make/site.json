@@ -1,0 +1,11 @@
+{
+  "title": "CareerBridge",
+  "description": "Connect students with internships by matching their skills to opportunities, providing insights on skill gaps and learning recommendations.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
