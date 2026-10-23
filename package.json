@@ -1,0 +1,17 @@
+{
+  "name": "careerbridge",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "npm run dev:frontend",
+    "dev:frontend": "npm run dev --workspace=careerbridge-frontend",
+    "dev:backend": "npm run dev --workspace=careerbridge-backend",
+    "build": "npm run build --workspace=careerbridge-frontend",
+    "preview": "npm run preview --workspace=careerbridge-frontend",
+    "format": "npm run format --workspace=careerbridge-frontend",
+    "create:admin": "npm run create:admin --workspace=careerbridge-backend"
+  }
+}
