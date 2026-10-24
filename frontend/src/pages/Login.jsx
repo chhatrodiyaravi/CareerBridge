@@ -113,6 +113,14 @@ export default function Login() {
               ? "Sign in with your administrator account"
               : "Sign in to continue your career journey"}
           </p>
+          {location.state?.message && (
+            <p
+              role="status"
+              className="mb-4 rounded-xl bg-green-50 px-3 py-2 text-sm text-green-700"
+            >
+              {location.state.message}
+            </p>
+          )}
 
           <form onSubmit={handleSubmit}>
             <div className="space-y-4 mb-6">
@@ -162,6 +170,17 @@ export default function Login() {
                     {show ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
                 </div>
+                {!isAdminLogin && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigate("/forgot-password", { state: { email } })
+                    }
+                    className="mt-2 text-xs font-semibold text-blue-600 hover:underline"
+                  >
+                    Forgot password?
+                  </button>
+                )}
               </div>
             </div>
 

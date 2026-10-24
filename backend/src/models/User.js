@@ -97,6 +97,12 @@ const userSchema = new Schema(
 
     passwordHash: { type: String, required: true, select: false },
 
+    passwordResetOtpHash: { type: String, select: false },
+
+    passwordResetOtpExpires: { type: Date, select: false },
+
+    passwordResetOtpAttempts: { type: Number, default: 0, select: false },
+
     role: {
       type: String,
 

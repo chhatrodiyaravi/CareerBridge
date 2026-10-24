@@ -3,6 +3,7 @@ import { useState } from "react"
 import Landing from "./pages/Landing"
 import Login from "./pages/Login"
 import Register from "./pages/Register"
+import PasswordReset from "./pages/PasswordReset"
 import StudentDashboard from "./pages/student/Dashboard"
 import StudentProfile from "./pages/student/Profile"
 import MySkills from "./pages/student/Skills"
@@ -147,6 +148,8 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/admin/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<PasswordReset />} />
+          <Route path="/reset-password" element={<PasswordReset />} />
 
           {/* Student */}
           <Route
