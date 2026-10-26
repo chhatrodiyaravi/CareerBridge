@@ -31,6 +31,16 @@ const applicationSchema = new Schema(
     coverLetter: { type: String, trim: true, maxlength: 5000 },
 
     resumeUrl: { type: String, trim: true, maxlength: 2048 },
+
+    resumeFile: {
+      url: { type: String, maxlength: 2048 },
+      publicId: { type: String, maxlength: 255 },
+      originalName: { type: String, maxlength: 255 },
+      format: { type: String, maxlength: 20 },
+      bytes: { type: Number, min: 0 },
+      resourceType: { type: String, enum: ["raw"] },
+      accessType: { type: String, enum: ["authenticated"] },
+    },
   },
 
   { timestamps: true },

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { ExternalLink, GitFork, Plus, Trash2, X } from "lucide-react"
 import DashboardLayout from "../../components/DashboardLayout"
+import MediaUpload from "../../components/MediaUpload"
 import { apiRequest } from "../../lib/api"
 const emptyProject = {
   name: "",
@@ -93,10 +94,15 @@ export default function MyProjects() {
   async function deleteProject(id) {
     setError("")
     try {
-      await apiRequest(`/projects/${encodeURIComponent(id)}`, {
+      const result = await apiRequest(`/projects/${encodeURIComponent(id)}`, {
         method: "DELETE",
       })
       setProjects((current) => current.filter((project) => project.id !== id))
+      if (result.cleanupWarning) {
+        setError(
+          "Project deleted, but its image could not be removed from Cloudinary.",
+        )
+      }
     } catch (requestError) {
       setError(
         requestError instanceof Error
@@ -147,9 +153,17 @@ export default function MyProjects() {
               className="group overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition-all hover:shadow-md"
             >
               <div className="flex h-32 items-center justify-center bg-blue-50">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600 text-xl font-extrabold text-white shadow-lg">
-                  {project.name.slice(0, 2).toUpperCase()}
-                </div>
+                {project.image?.url ? (
+                  <img
+                    src={project.image.url}
+                    alt={`${project.name} project`}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600 text-xl font-extrabold text-white shadow-lg">
+                    {project.name.slice(0, 2).toUpperCase()}
+                  </div>
+                )}
                 <div className="absolute ml-52 mt-[-5rem] flex gap-2 opacity-0 transition-opacity group-hover:opacity-100">
                   <button
                     onClick={() => startEdit(project)}
@@ -240,6 +254,30 @@ export default function MyProjects() {
               </button>
             </div>
             <div className="space-y-4">
+              {editingId ? (
+                <MediaUpload
+                  label="Project image"
+                  kind="image"
+                  existingFile={
+                    projects.find((project) => project.id === editingId)?.image
+                  }
+                  uploadPath={`/uploads/projects/${encodeURIComponent(editingId)}/image`}
+                  deletePath={`/uploads/projects/${encodeURIComponent(editingId)}/image`}
+                  onChange={(image) =>
+                    setProjects((current) =>
+                      current.map((project) =>
+                        project.id === editingId
+                          ? { ...project, image: image ?? undefined }
+                          : project,
+                      ),
+                    )
+                  }
+                />
+              ) : (
+                <p className="rounded-lg bg-blue-50 p-3 text-xs text-blue-700">
+                  Save the project first to upload its image.
+                </p>
+              )}
               <label className="block text-xs font-semibold text-slate-600">
                 Project Name
                 <input

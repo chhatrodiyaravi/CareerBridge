@@ -12,6 +12,12 @@ export default function DashboardLayout({ role, children }) {
     role === "company"
       ? user?.companyProfile?.companyName || user?.name || "Account"
       : user?.name || "Account"
+  const avatarUrl =
+    role === "student"
+      ? user?.studentProfile?.profileImage?.url
+      : role === "company"
+        ? user?.companyProfile?.logo?.url
+        : undefined
   const avatarColors = {
     student: "#2563EB",
     company: "#7c3aed",
@@ -75,12 +81,20 @@ export default function DashboardLayout({ role, children }) {
             </span>
           )}
           <div className="flex items-center gap-2.5">
-            <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center text-white text-xs font-bold"
-              style={{ background: avatarColors[role] }}
-            >
-              {displayName.charAt(0)}
-            </div>
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt=""
+                className="h-8 w-8 rounded-xl bg-white object-cover"
+              />
+            ) : (
+              <div
+                className="flex h-8 w-8 items-center justify-center rounded-xl text-xs font-bold text-white"
+                style={{ background: avatarColors[role] }}
+              >
+                {displayName.charAt(0)}
+              </div>
+            )}
             <span className="hidden sm:block text-sm font-medium text-slate-700">
               {displayName}
             </span>

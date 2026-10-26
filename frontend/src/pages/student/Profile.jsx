@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   GraduationCap,
   Mail,
@@ -8,14 +8,18 @@ import {
   UserRound,
 } from "lucide-react"
 import DashboardLayout from "../../components/DashboardLayout"
+import MediaUpload from "../../components/MediaUpload"
 import { useAuth } from "../../auth/AuthContext"
+import { apiRequest } from "../../lib/api"
 export default function StudentProfile() {
-  const { user, updateProfile } = useAuth()
+  const { user, updateProfile, refreshSession } = useAuth()
   const profile = user?.studentProfile ?? {}
   const education = profile.education ?? {}
   const [editing, setEditing] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState("")
+  const [resume, setResume] = useState(null)
+  const [resumeError, setResumeError] = useState("")
   const [form, setForm] = useState({
     name: user?.name ?? "",
     phone: profile.phone ?? "",
@@ -26,6 +30,17 @@ export default function StudentProfile() {
     graduationYear: education.graduationYear?.toString() ?? "",
     skills: profile.skills?.join(", ") ?? "",
   })
+  useEffect(() => {
+    apiRequest("/uploads/resume")
+      .then((result) => setResume(result.resume))
+      .catch((requestError) =>
+        setResumeError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Unable to load resume details.",
+        ),
+      )
+  }, [])
   const completedFields = [
     user?.name,
     user?.email,
@@ -99,9 +114,31 @@ export default function StudentProfile() {
         <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
           <div className="h-24 bg-gradient-to-r from-blue-600 to-indigo-700" />
           <div className="px-6 pb-6">
-            <div className="-mt-12 mb-4 flex items-end justify-between">
-              <div className="flex h-20 w-20 items-center justify-center rounded-2xl border-4 border-white bg-blue-600 text-2xl font-bold text-white shadow-lg">
-                {user?.name.charAt(0).toUpperCase() || <UserRound />}
+            <div className="-mt-12 mb-4 flex items-end justify-between gap-4">
+              <div className="flex items-end gap-4">
+                {profile.profileImage?.url ? (
+                  <img
+                    src={profile.profileImage.url}
+                    alt={`${user?.name} profile`}
+                    className="h-20 w-20 rounded-2xl border-4 border-white object-cover shadow-lg"
+                  />
+                ) : (
+                  <div className="flex h-20 w-20 items-center justify-center rounded-2xl border-4 border-white bg-blue-600 text-2xl font-bold text-white shadow-lg">
+                    {user?.name.charAt(0).toUpperCase() || <UserRound />}
+                  </div>
+                )}
+                {editing && (
+                  <MediaUpload
+                    label="Profile photo"
+                    kind="image"
+                    existingFile={profile.profileImage}
+                    uploadPath="/uploads/profile-image"
+                    deletePath="/uploads/profile-image"
+                    onChange={() => void refreshSession()}
+                    showImagePreview={false}
+                    disabled={submitting}
+                  />
+                )}
               </div>
               {editing ? (
                 <button
@@ -299,6 +336,28 @@ export default function StudentProfile() {
               )}
             </div>
           )}
+        </section>
+
+        <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+          <h2 className="mb-3 font-semibold text-slate-800">Resume</h2>
+          {resumeError && (
+            <p role="alert" className="mb-3 text-sm text-red-600">
+              {resumeError}
+            </p>
+          )}
+          <MediaUpload
+            label="Private resume"
+            kind="pdf"
+            existingFile={resume}
+            uploadPath="/uploads/resume"
+            deletePath="/uploads/resume"
+            viewPath="/api/uploads/resume/file"
+            onChange={setResume}
+          />
+          <p className="mt-2 text-xs text-slate-400">
+            Your resume is private. Only you and companies you have applied to
+            can view it.
+          </p>
         </section>
       </div>
     </DashboardLayout>

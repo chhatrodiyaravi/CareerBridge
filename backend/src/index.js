@@ -22,6 +22,12 @@ import projectRoutes from "./routes/projects.js"
 
 import settingsRoutes from "./routes/settings.js"
 
+import uploadRoutes from "./routes/uploads.js"
+
+import multer from "multer"
+
+import { UploadValidationError } from "./middleware/uploads.js"
+
 dotenv.config({ path: fileURLToPath(new URL("../.env", import.meta.url)) })
 
 const app = express()
@@ -79,6 +85,8 @@ app.use("/api", applicationRoutes)
 
 app.use("/api/profile", profileRoutes)
 
+app.use("/api/uploads", uploadRoutes)
+
 app.use("/api/projects", projectRoutes)
 
 app.use("/api/settings", settingsRoutes)
@@ -91,6 +99,18 @@ app.use("/api", (_request, response) => {
 
 app.use((error, _request, response, _next) => {
   console.error("API request failed:", error)
+
+  if (error instanceof UploadValidationError) {
+    return response.status(400).json({ message: error.message })
+  }
+
+  if (error instanceof multer.MulterError) {
+    const message =
+      error.code === "LIMIT_FILE_SIZE"
+        ? "Files must be 5 MB or smaller."
+        : "Choose one valid file to upload."
+    return response.status(400).json({ message })
+  }
 
   if (error?.type === "entity.parse.failed") {
     return response

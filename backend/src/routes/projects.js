@@ -1,6 +1,7 @@
 import { Router } from "express"
 
 import { requireAuth, requireRole } from "../middleware/auth.js"
+import { deleteCloudinaryAsset } from "../services/cloudinary.js"
 
 const router = Router()
 
@@ -127,11 +128,25 @@ router.delete(
     if (!project)
       return response.status(404).json({ message: "Project not found." })
 
+    const projectImage = project.image
     project.deleteOne()
 
     await request.user.save()
 
-    return response.json({ message: "Project deleted." })
+    let cleanupWarning = false
+    if (projectImage) {
+      try {
+        await deleteCloudinaryAsset(projectImage)
+      } catch (error) {
+        console.error("Deleted project image cleanup failed:", error)
+        cleanupWarning = true
+      }
+    }
+
+    return response.json({
+      message: "Project deleted.",
+      cleanupWarning,
+    })
   },
 )
 

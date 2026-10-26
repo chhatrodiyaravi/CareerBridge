@@ -5,6 +5,14 @@ import { requireAuth, requireRole } from "../middleware/auth.js"
 const router = Router()
 
 function publicUser(user) {
+  const studentProfile =
+    user.studentProfile?.toObject?.() ?? user.studentProfile
+  const safeStudentProfile = studentProfile
+    ? Object.fromEntries(
+        Object.entries(studentProfile).filter(([key]) => key !== "resume"),
+      )
+    : undefined
+
   return {
     id: user.id,
 
@@ -14,7 +22,7 @@ function publicUser(user) {
 
     role: user.role,
 
-    studentProfile: user.studentProfile,
+    studentProfile: safeStudentProfile,
 
     companyProfile: user.companyProfile,
 

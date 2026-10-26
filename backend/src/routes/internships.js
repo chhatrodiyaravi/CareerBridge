@@ -63,6 +63,8 @@ function internshipView(internship, user) {
 
     company: companyName,
 
+    companyLogoUrl: company?.companyProfile?.logo?.url ?? "",
+
     location: internship.location ?? "",
 
     mode: internship.mode,
@@ -214,7 +216,10 @@ router.get(
 
       .sort({ publishedAt: -1, createdAt: -1 })
 
-      .populate("company", "name companyProfile.companyName")
+      .populate(
+        "company",
+        "name companyProfile.companyName companyProfile.logo.url",
+      )
 
       .lean()
 
@@ -310,7 +315,10 @@ router.get(
 
       .sort({ createdAt: -1 })
 
-      .populate("company", "name companyProfile.companyName")
+      .populate(
+        "company",
+        "name companyProfile.companyName companyProfile.logo.url",
+      )
 
       .lean()
 
@@ -354,7 +362,7 @@ router.get(
 
       .populate(
         "company",
-        "name companyProfile.companyName companyProfile.industry companyProfile.description",
+        "name companyProfile.companyName companyProfile.logo.url companyProfile.industry companyProfile.description",
       )
 
       .lean()
@@ -410,7 +418,7 @@ router.post(
         internship: internshipView(
           await internship.populate(
             "company",
-            "name companyProfile.companyName",
+            "name companyProfile.companyName companyProfile.logo.url",
           ),
         ),
       })

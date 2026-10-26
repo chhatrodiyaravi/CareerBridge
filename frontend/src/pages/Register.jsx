@@ -18,6 +18,23 @@ export default function Register() {
   async function handleSubmit(event) {
     event.preventDefault()
     setError("")
+    const trimmedName = name.trim()
+    const normalizedEmail = email.trim()
+    if (!trimmedName || trimmedName.length > 120) {
+      setError("Enter a name between 1 and 120 characters.")
+      return
+    }
+    if (
+      normalizedEmail.length > 254 ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)
+    ) {
+      setError("Enter a valid email address.")
+      return
+    }
+    if (password.length < 8 || password.length > 72) {
+      setError("Password must be between 8 and 72 characters.")
+      return
+    }
     if (password !== confirmPassword) {
       setError("Passwords do not match.")
       return
@@ -28,7 +45,12 @@ export default function Register() {
     }
     setSubmitting(true)
     try {
-      const user = await register({ name, email, password, role })
+      const user = await register({
+        name: trimmedName,
+        email: normalizedEmail,
+        password,
+        role,
+      })
       navigate(`/${user.role}`, { replace: true })
     } catch (requestError) {
       setError(
@@ -91,7 +113,7 @@ export default function Register() {
             Create your account and start exploring
           </p>
 
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} noValidate>
             <div className="grid grid-cols-2 gap-2 mb-6 p-1.5 bg-slate-100 rounded-xl">
               {["student", "company"].map((r) => (
                 <button
@@ -125,8 +147,6 @@ export default function Register() {
                     onChange={(event) => setName(event.target.value)}
                     autoComplete="name"
                     placeholder="Your full name"
-                    maxLength={120}
-                    required
                     className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
                   />
                 </div>
@@ -141,12 +161,12 @@ export default function Register() {
                     className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
                   />
                   <input
-                    type="email"
+                    type="text"
+                    inputMode="email"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     autoComplete="email"
                     placeholder="you@example.com"
-                    required
                     className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
                   />
                 </div>
@@ -165,9 +185,6 @@ export default function Register() {
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                     autoComplete="new-password"
-                    minLength={8}
-                    maxLength={72}
-                    required
                     placeholder="Min 8 characters"
                     className="w-full pl-9 pr-10 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
                   />
@@ -194,9 +211,6 @@ export default function Register() {
                     value={confirmPassword}
                     onChange={(event) => setConfirmPassword(event.target.value)}
                     autoComplete="new-password"
-                    minLength={8}
-                    maxLength={72}
-                    required
                     placeholder="Repeat password"
                     className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
                   />

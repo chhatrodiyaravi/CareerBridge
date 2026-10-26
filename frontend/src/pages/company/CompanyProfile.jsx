@@ -9,9 +9,10 @@ import {
   Users,
 } from "lucide-react"
 import DashboardLayout from "../../components/DashboardLayout"
+import MediaUpload from "../../components/MediaUpload"
 import { useAuth } from "../../auth/AuthContext"
 export default function CompanyProfile() {
-  const { user, updateProfile } = useAuth()
+  const { user, updateProfile, refreshSession } = useAuth()
   const profile = user?.companyProfile ?? {}
   const [editing, setEditing] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -91,10 +92,32 @@ export default function CompanyProfile() {
         <section className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
           <div className="h-24 bg-gradient-to-r from-blue-600 to-indigo-700" />
           <div className="px-6 pb-6">
-            <div className="-mt-10 mb-3 flex h-20 w-20 items-center justify-center rounded-2xl border-4 border-white bg-blue-600 text-2xl font-bold text-white shadow-lg">
-              {(form.companyName || user?.name || "C")
-                .slice(0, 2)
-                .toUpperCase()}
+            <div className="-mt-10 mb-3 flex flex-wrap items-end gap-4">
+              {profile.logo?.url ? (
+                <img
+                  src={profile.logo.url}
+                  alt={`${profile.companyName || user?.name} logo`}
+                  className="h-20 w-20 rounded-2xl border-4 border-white bg-white object-contain shadow-lg"
+                />
+              ) : (
+                <div className="flex h-20 w-20 items-center justify-center rounded-2xl border-4 border-white bg-blue-600 text-2xl font-bold text-white shadow-lg">
+                  {(form.companyName || user?.name || "C")
+                    .slice(0, 2)
+                    .toUpperCase()}
+                </div>
+              )}
+              {editing && (
+                <MediaUpload
+                  label="Company logo"
+                  kind="image"
+                  existingFile={profile.logo}
+                  uploadPath="/uploads/company-logo"
+                  deletePath="/uploads/company-logo"
+                  onChange={() => void refreshSession()}
+                  showImagePreview={false}
+                  disabled={submitting}
+                />
+              )}
             </div>
             {editing ? (
               <input

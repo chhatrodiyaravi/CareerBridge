@@ -2,6 +2,23 @@ import mongoose from "mongoose"
 
 const { Schema, model, models } = mongoose
 
+const uploadedFileSchema = new Schema(
+  {
+    url: { type: String, required: true, maxlength: 2048 },
+    publicId: { type: String, required: true, maxlength: 255 },
+    originalName: { type: String, required: true, maxlength: 255 },
+    format: { type: String, required: true, maxlength: 20 },
+    bytes: { type: Number, required: true, min: 0 },
+    resourceType: { type: String, required: true, enum: ["image", "raw"] },
+    accessType: {
+      type: String,
+      required: true,
+      enum: ["upload", "authenticated"],
+    },
+  },
+  { _id: false },
+)
+
 const projectSchema = new Schema(
   {
     name: { type: String, required: true, trim: true, maxlength: 120 },
@@ -9,6 +26,7 @@ const projectSchema = new Schema(
     technologies: [{ type: String, trim: true, maxlength: 80 }],
     githubUrl: { type: String, trim: true, maxlength: 2048 },
     demoUrl: { type: String, trim: true, maxlength: 2048 },
+    image: { type: uploadedFileSchema, default: undefined },
   },
   { timestamps: true },
 )
@@ -18,6 +36,10 @@ const studentProfileSchema = new Schema(
     phone: { type: String, trim: true },
 
     location: { type: String, trim: true },
+
+    profileImage: { type: uploadedFileSchema, default: undefined },
+
+    resume: { type: uploadedFileSchema, default: undefined },
 
     education: {
       degree: { type: String, trim: true },
@@ -54,6 +76,8 @@ const companyProfileSchema = new Schema(
     phone: { type: String, trim: true },
 
     description: { type: String, trim: true },
+
+    logo: { type: uploadedFileSchema, default: undefined },
 
     verificationStatus: {
       type: String,

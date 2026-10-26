@@ -12,6 +12,7 @@
     "build": "npm run build --workspace=careerbridge-frontend",
     "preview": "npm run preview --workspace=careerbridge-frontend",
     "format": "npm run format --workspace=careerbridge-frontend",
-    "create:admin": "npm run create:admin --workspace=careerbridge-backend"
+    "create:admin": "npm run create:admin --workspace=careerbridge-backend",
+    "seed:companies": "npm run seed:companies --workspace=careerbridge-backend"
   }
 }

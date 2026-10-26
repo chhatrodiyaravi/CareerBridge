@@ -5,11 +5,13 @@ import {
   Building2,
   Calendar,
   Clock,
+  FileText,
   MapPin,
   Users,
+  X,
 } from "lucide-react"
 import DashboardLayout from "../../components/DashboardLayout"
-import { apiRequest } from "../../lib/api"
+import { apiRequest, apiUpload } from "../../lib/api"
 import { CircularProgress } from "../../components/SkillMatchCard"
 export default function InternshipDetails() {
   const { id } = useParams()
@@ -20,7 +22,7 @@ export default function InternshipDetails() {
   const [error, setError] = useState("")
   const [applicationOpen, setApplicationOpen] = useState(false)
   const [coverLetter, setCoverLetter] = useState("")
-  const [resumeUrl, setResumeUrl] = useState("")
+  const [resumeFile, setResumeFile] = useState(null)
   useEffect(() => {
     if (!id) {
       setError("Internship not found.")
@@ -44,11 +46,13 @@ export default function InternshipDetails() {
     setSubmitting(true)
     setError("")
     try {
-      await apiRequest(`/internships/${encodeURIComponent(id)}/applications`, {
-        method: "POST",
-        body: JSON.stringify({ coverLetter, resumeUrl }),
-      })
+      await apiUpload(
+        `/internships/${encodeURIComponent(id)}/applications`,
+        resumeFile,
+        { coverLetter },
+      )
       setApplicationOpen(false)
+      setResumeFile(null)
       setInternship((current) =>
         current ? { ...current, hasApplied: true } : current,
       )
@@ -106,7 +110,15 @@ export default function InternshipDetails() {
       <div className="mb-5 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-start gap-4">
           <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-xl font-bold text-white">
-            {companyInitials}
+            {internship.companyLogoUrl ? (
+              <img
+                src={internship.companyLogoUrl}
+                alt={`${internship.company} logo`}
+                className="h-full w-full rounded-2xl bg-white object-contain"
+              />
+            ) : (
+              companyInitials
+            )}
           </div>
           <div className="min-w-0 flex-1">
             <h1
@@ -137,7 +149,16 @@ export default function InternshipDetails() {
           {!internship.hasApplied && (
             <button
               type="button"
-              onClick={() => setApplicationOpen((open) => !open)}
+              onClick={() =>
+                setApplicationOpen((open) => {
+                  if (open) {
+                    setResumeFile(null)
+                    setCoverLetter("")
+                    setError("")
+                  }
+                  return !open
+                })
+              }
               className="rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
             >
               {applicationOpen ? "Cancel Application" : "Apply Now"}
@@ -161,21 +182,59 @@ export default function InternshipDetails() {
           </h2>
           <div>
             <label
-              htmlFor="resume-url"
+              htmlFor="resume-file"
               className="mb-1.5 block text-sm font-medium text-slate-700"
             >
-              Resume URL
+              Resume PDF
             </label>
             <input
-              id="resume-url"
-              type="url"
-              value={resumeUrl}
-              onChange={(event) => setResumeUrl(event.target.value)}
-              placeholder="https://example.com/my-resume.pdf"
-              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              id="resume-file"
+              type="file"
+              accept="application/pdf,.pdf"
+              onChange={(event) => {
+                const file = event.target.files?.[0] ?? null
+                event.target.value = ""
+                if (!file) return
+                if (file.type !== "application/pdf") {
+                  setResumeFile(null)
+                  setError("Choose a PDF resume.")
+                  return
+                }
+                if (file.size > 5 * 1024 * 1024) {
+                  setResumeFile(null)
+                  setError("Resume must be 5 MB or smaller.")
+                  return
+                }
+                setError("")
+                setResumeFile(file)
+              }}
+              className="sr-only"
             />
+            <div className="flex flex-wrap items-center gap-3">
+              <label
+                htmlFor="resume-file"
+                className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                <FileText size={16} />
+                {resumeFile ? "Choose another PDF" : "Choose PDF"}
+              </label>
+              {resumeFile && (
+                <span className="flex max-w-full items-center gap-2 text-sm text-slate-600">
+                  <span className="max-w-xs truncate">{resumeFile.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => setResumeFile(null)}
+                    aria-label="Remove selected resume"
+                    className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                  >
+                    <X size={15} />
+                  </button>
+                </span>
+              )}
+            </div>
             <p className="mt-1 text-xs text-slate-500">
-              Optional. Use a link that the hiring team can access.
+              Optional. PDF only, up to 5 MB. Your resume is shared privately
+              with this company.
             </p>
           </div>
           <div>

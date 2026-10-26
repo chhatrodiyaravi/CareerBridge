@@ -199,9 +199,17 @@ export default function FindInternships() {
                 className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:border-blue-200 hover:shadow-md transition-all p-5"
               >
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-blue-600 text-white font-bold shrink-0">
-                    {intern.company.slice(0, 2).toUpperCase()}
-                  </div>
+                  {intern.companyLogoUrl ? (
+                    <img
+                      src={intern.companyLogoUrl}
+                      alt={`${intern.company} logo`}
+                      className="h-12 w-12 shrink-0 rounded-2xl bg-white object-contain"
+                    />
+                  ) : (
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-600 font-bold text-white">
+                      {intern.company.slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-3 flex-wrap">
                       <div>

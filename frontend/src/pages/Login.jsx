@@ -24,9 +24,21 @@ export default function Login() {
   async function handleSubmit(event) {
     event.preventDefault()
     setError("")
+    const normalizedEmail = email.trim()
+    if (!normalizedEmail || !pass) {
+      setError("Enter your email and password.")
+      return
+    }
+    if (
+      normalizedEmail.length > 254 ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)
+    ) {
+      setError("Enter a valid email address.")
+      return
+    }
     setSubmitting(true)
     try {
-      const user = await login(email, pass)
+      const user = await login(normalizedEmail, pass)
       if (isAdminLogin && user.role !== "admin") {
         await logout()
         setError("This account does not have administrator access.")
@@ -122,7 +134,7 @@ export default function Login() {
             </p>
           )}
 
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} noValidate>
             <div className="space-y-4 mb-6">
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1.5">
@@ -134,12 +146,12 @@ export default function Login() {
                     className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
                   />
                   <input
-                    type="email"
+                    type="text"
+                    inputMode="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
                     autoComplete="email"
-                    required
                     className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
                   />
                 </div>
@@ -159,7 +171,6 @@ export default function Login() {
                     onChange={(e) => setPass(e.target.value)}
                     placeholder="••••••••"
                     autoComplete="current-password"
-                    required
                     className="w-full pl-9 pr-10 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
                   />
                   <button
@@ -216,16 +227,6 @@ export default function Login() {
               {isAdminLogin ? "Standard sign in" : "Create Account"}
             </button>
           </p>
-          {!isAdminLogin && (
-            <p className="text-center text-xs text-slate-400 mt-2">
-              <button
-                onClick={() => navigate("/admin/login")}
-                className="hover:text-slate-600"
-              >
-                Admin access →
-              </button>
-            </p>
-          )}
         </div>
       </div>
     </div>

@@ -4,9 +4,18 @@ import mongoose from "mongoose"
 
 import { requireAuth, requireRole } from "../middleware/auth.js"
 
+import { uploadResume, validateFileSignature } from "../middleware/uploads.js"
+
 import Application from "../models/Application.js"
 
 import Internship from "../models/Internship.js"
+
+import {
+  CloudinaryConfigurationError,
+  deleteCloudinaryAsset,
+  streamPrivateResume,
+  uploadToCloudinary,
+} from "../services/cloudinary.js"
 
 const router = Router()
 
@@ -16,6 +25,7 @@ router.post(
   "/internships/:internshipId/applications",
   requireAuth,
   requireRole("student"),
+  uploadResume,
   async (request, response) => {
     if (!mongoose.isValidObjectId(request.params.internshipId)) {
       return response.status(404).json({ message: "Internship not found." })
@@ -57,6 +67,14 @@ router.post(
       return response.status(400).json({ message: "Enter a valid resume URL." })
     }
 
+    if (request.file) {
+      try {
+        validateFileSignature(request.file, "resume")
+      } catch (error) {
+        return response.status(400).json({ message: error.message })
+      }
+    }
+
     const existing = await Application.exists({
       student: request.auth.sub,
       internship: internship.id,
@@ -67,19 +85,76 @@ router.post(
         .status(409)
         .json({ message: "You have already applied to this internship." })
 
-    const application = await Application.create({
-      student: request.auth.sub,
+    let uploadedResume
+    try {
+      if (request.file) {
+        uploadedResume = await uploadToCloudinary(request.file, {
+          folder: "careerbridge/private-resumes/applications",
+          resourceType: "raw",
+          accessType: "authenticated",
+          format: "pdf",
+        })
+      }
 
-      internship: internship.id,
+      const application = await Application.create({
+        student: request.auth.sub,
+        internship: internship.id,
+        coverLetter,
+        ...(!uploadedResume ? { resumeUrl } : {}),
+        ...(uploadedResume
+          ? {
+              resumeFile: {
+                url: uploadedResume.url,
+                publicId: uploadedResume.publicId,
+                originalName: uploadedResume.originalName,
+                format: uploadedResume.format,
+                bytes: uploadedResume.bytes,
+                resourceType: uploadedResume.resourceType,
+                accessType: uploadedResume.accessType,
+              },
+            }
+          : {}),
+      })
 
-      coverLetter,
-
-      resumeUrl,
-    })
-
-    return response
-      .status(201)
-      .json({ application: { id: application.id, status: application.status } })
+      return response.status(201).json({
+        application: { id: application.id, status: application.status },
+      })
+    } catch (error) {
+      if (uploadedResume) {
+        try {
+          await deleteCloudinaryAsset(uploadedResume)
+        } catch (cleanupError) {
+          console.error(
+            "Failed to clean up resume after application submission failed:",
+            cleanupError,
+          )
+        }
+      }
+      if (error?.code === 11000) {
+        return response
+          .status(409)
+          .json({ message: "You have already applied to this internship." })
+      }
+      if (error instanceof CloudinaryConfigurationError) {
+        return response.status(503).json({ message: error.message })
+      }
+      if (request.file && !uploadedResume) {
+        console.error("Application resume upload failed:", error)
+        return response.status(502).json({
+          message: "The resume could not be uploaded. Please try again.",
+        })
+      }
+      if (request.file) {
+        console.error(
+          "Application submission failed after resume upload:",
+          error,
+        )
+        return response.status(500).json({
+          message: "The application could not be submitted. Please try again.",
+        })
+      }
+      throw error
+    }
   },
 )
 
@@ -105,7 +180,7 @@ router.get(
 
         populate: {
           path: "company",
-          select: "name companyProfile.companyName",
+          select: "name companyProfile.companyName companyProfile.logo.url",
         },
       })
 
@@ -187,7 +262,11 @@ router.get(
 
         coverLetter: application.coverLetter ?? "",
 
-        resumeUrl: application.resumeUrl ?? "",
+        resumeUrl: application.resumeFile
+          ? `/api/applications/${application._id.toString()}/resume`
+          : application.student?.studentProfile?.resume
+            ? `/api/uploads/resumes/${application.student._id.toString()}/file`
+            : (application.resumeUrl ?? ""),
 
         student: {
           id: application.student?._id?.toString(),
@@ -210,6 +289,54 @@ router.get(
         },
       })),
     })
+  },
+)
+
+router.get(
+  "/applications/:id/resume",
+  requireAuth,
+  requireRole("student", "company"),
+  async (request, response) => {
+    if (!mongoose.isValidObjectId(request.params.id)) {
+      return response.status(404).json({ message: "Resume not found." })
+    }
+
+    const application = await Application.findById(request.params.id).populate(
+      "internship",
+      "company",
+    )
+    if (!application?.resumeFile) {
+      return response.status(404).json({ message: "Resume not found." })
+    }
+
+    const isStudentOwner =
+      request.auth.role === "student" &&
+      application.student.toString() === request.auth.sub
+    const isHiringCompany =
+      request.auth.role === "company" &&
+      application.internship?.company?.toString() === request.auth.sub
+
+    if (!isStudentOwner && !isHiringCompany) {
+      return response
+        .status(403)
+        .json({ message: "You cannot access this resume." })
+    }
+
+    try {
+      await streamPrivateResume(application.resumeFile, response)
+    } catch (error) {
+      console.error("Application resume download failed:", error)
+      if (!response.headersSent) {
+        return response
+          .status(error instanceof CloudinaryConfigurationError ? 503 : 502)
+          .json({
+            message:
+              error instanceof CloudinaryConfigurationError
+                ? error.message
+                : "The resume could not be opened.",
+          })
+      }
+    }
   },
 )
 
